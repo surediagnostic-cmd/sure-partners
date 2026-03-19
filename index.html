@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sure Diagnostics — Partners Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --navy: #0D1B3E;
+  --navy-mid: #162552;
+  --navy-light: #1E3370;
+  --orange: #E8650A;
+  --orange-light: #F07830;
+  --orange-pale: #FEF0E6;
+  --teal: #0A8A7A;
+  --teal-pale: #E3F5F3;
+  --gold: #D4A017;
+  --gold-pale: #FDF6E3;
+  --white: #FFFFFF;
+  --off-white: #F8F9FC;
+  --gray-50: #F3F4F8;
+  --gray-100: #E8EAF2;
+  --gray-200: #C8CCDB;
+  --gray-400: #8A90A8;
+  --gray-600: #4A5068;
+  --gray-800: #1C2240;
+  --red: #C0392B;
+  --red-pale: #FDECEA;
+  --green: #1A8A4A;
+  --green-pale: #E8F5EE;
+  --shadow-sm: 0 1px 3px rgba(13,27,62,0.08);
+  --shadow-md: 0 4px 16px rgba(13,27,62,0.12);
+  --shadow-lg: 0 8px 32px rgba(13,27,62,0.16);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'DM Sans', sans-serif; background: var(--off-white); color: var(--gray-800); min-height: 100vh; }
+
+/* ── LOGIN ── */
+#login-screen {
+  min-height: 100vh;
+  display: flex;
+  background: var(--navy);
+  position: relative;
+  overflow: hidden;
+}
+#login-screen::before {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,101,10,0.15) 0%, transparent 70%);
+  top: -200px; right: -100px;
+}
+#login-screen::after {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(10,138,122,0.12) 0%, transparent 70%);
+  bottom: -150px; left: -100px;
+}
+.login-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px;
+  position: relative;
+  z-index: 1;
+}
+.login-brand {
+  margin-bottom: 60px;
+}
+.login-brand .brand-sure {
+  font-family: 'Syne', sans-serif;
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--orange);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.login-brand .brand-diag {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.login-tagline {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.2;
+  margin-bottom: 24px;
+}
+.login-tagline span { color: var(--orange); }
+.login-desc {
+  color: rgba(255,255,255,0.55);
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 420px;
+}
+.login-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 60px;
+}
+.login-stat { }
+.login-stat-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--orange);
+}
+.login-stat-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.login-right {
+  width: 480px;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 50px;
+  position: relative;
+  z-index: 1;
+}
+.login-form-wrap { width: 100%; }
+.login-form-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+.login-form-sub {
+  font-size: 14px;
+  color: var(--gray-400);
+  margin-bottom: 36px;
+}
+.form-group { margin-bottom: 20px; }
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+.form-input {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--gray-800);
+  background: var(--gray-50);
+  transition: all 0.2s;
+  outline: none;
+}
+.form-input:focus { border-color: var(--orange); background: var(--white); box-shadow: 0 0 0 3px rgba(232,101,10,0.08); }
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+}
+.btn-login:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.login-error {
+  background: var(--red-pale);
+  color: var(--red);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-top: 14px;
+  display: none;
+}
+.demo-hint {
+  margin-top: 28px;
+  padding: 14px;
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--orange);
+}
+.demo-hint p { font-size: 12px; color: var(--gray-600); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.demo-hint code { font-size: 12px; color: var(--navy); background: var(--gray-100); padding: 2px 6px; border-radius: 4px; }
+
+/* ── APP SHELL ── */
+#app { display: none; min-height: 100vh; }
+#app.visible { display: flex; }
+.app-layout { display: contents; }
+
+/* ── SIDEBAR ── */
+:root { --sidebar-w: 260px; --sidebar-collapsed-w: 62px; }
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.25s cubic-bezier(.4,0,.2,1);
+}
+.sidebar.collapsed { width: var(--sidebar-collapsed-w); }
+.sidebar-brand {
+  padding: 22px 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.brand-text { overflow: hidden; transition: opacity 0.2s; white-space: nowrap; }
+.sidebar.collapsed .brand-text { opacity: 0; width: 0; pointer-events: none; }
+.brand-sure { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--orange); line-height: 1; }
+.brand-diag { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.4); letter-spacing: 3px; text-transform: uppercase; margin-top: 2px; }
+.brand-tag { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 4px; font-style: italic; }
+.collapse-btn {
+  width: 28px; height: 28px; border-radius: 7px; background: rgba(255,255,255,0.08);
+  border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.5); flex-shrink: 0; transition: all 0.2s;
+}
+.collapse-btn:hover { background: rgba(255,255,255,0.16); color: var(--white); }
+.collapse-btn svg { width: 14px; height: 14px; transition: transform 0.25s; }
+.sidebar.collapsed .collapse-btn svg { transform: rotate(180deg); }
+.partner-badge {
+  margin: 14px 12px 0;
+  padding: 11px 12px;
+  background: rgba(232,101,10,0.12);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(232,101,10,0.2);
+  overflow: hidden; white-space: nowrap;
+  transition: opacity 0.2s, margin 0.25s, padding 0.25s, max-height 0.25s;
+  max-height: 80px;
+}
+.sidebar.collapsed .partner-badge { opacity: 0; margin: 0 12px; padding: 0; max-height: 0; }
+.partner-badge-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+.partner-badge-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--white); margin-top: 2px; }
+.partner-badge-type { font-size: 11px; color: var(--orange); margin-top: 1px; }
+.sidebar-nav { flex: 1; padding: 14px 0; }
+.nav-section-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 10px 22px 5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+.sidebar.collapsed .nav-section-label { opacity: 0; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 22px;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+}
+.nav-item:hover { color: var(--white); background: rgba(255,255,255,0.06); }
+.nav-item.active { color: var(--white); background: rgba(232,101,10,0.15); border-left-color: var(--orange); }
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.nav-label { transition: opacity 0.2s; }
+.sidebar.collapsed .nav-label { opacity: 0; width: 0; overflow: hidden; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 11px 0; border-left-color: transparent !important; }
+.sidebar.collapsed .nav-item.active { background: rgba(232,101,10,0.2); }
+.sidebar.collapsed .nav-item.active svg { color: var(--orange); }
+/* Tooltips */
+.sidebar.collapsed .nav-item::after {
+  content: attr(data-tip); position: absolute; left: calc(var(--sidebar-collapsed-w) + 8px);
+  top: 50%; transform: translateY(-50%); background: var(--navy-light); color: var(--white);
+  padding: 5px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap;
+  pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 200;
+  box-shadow: var(--shadow-md);
+}
+.sidebar.collapsed .nav-item:hover::after { opacity: 1; }
+.sidebar-footer {
+  padding: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.btn-logout {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius-sm);
+  color: rgba(255,255,255,0.5);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.btn-logout:hover { background: rgba(255,255,255,0.08); color: var(--white); }
+.sidebar.collapsed .btn-logout .logout-label { display: none; }
+
+/* ── MAIN CONTENT ── */
+.main-content { flex: 1; margin-left: var(--sidebar-w); padding: 32px; min-height: 100vh; transition: margin-left 0.25s cubic-bezier(.4,0,.2,1); }
+.main-content.expanded { margin-left: var(--sidebar-collapsed-w); }
+.page { display: none; }
+.page.active { display: block; }
+.page-header { margin-bottom: 28px; }
+.page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; color: var(--navy); }
+.page-sub { font-size: 14px; color: var(--gray-400); margin-top: 4px; }
+
+/* ── STAT CARDS ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.stat-card.blue::after { background: var(--navy); }
+.stat-card.orange::after { background: var(--orange); }
+.stat-card.teal::after { background: var(--teal); }
+.stat-card.gold::after { background: var(--gold); }
+.stat-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.stat-icon.blue { background: rgba(13,27,62,0.08); color: var(--navy); }
+.stat-icon.orange { background: var(--orange-pale); color: var(--orange); }
+.stat-icon.teal { background: var(--teal-pale); color: var(--teal); }
+.stat-icon.gold { background: var(--gold-pale); color: var(--gold); }
+.stat-icon svg { width: 20px; height: 20px; }
+.stat-label { font-size: 11px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: var(--navy); margin: 4px 0; }
+.stat-change { font-size: 12px; color: var(--green); font-weight: 500; }
+.stat-change.down { color: var(--red); }
+
+/* ── CHARTS GRID ── */
+.charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+.chart-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.chart-sub { font-size: 12px; color: var(--gray-400); margin-bottom: 20px; }
+.chart-wrap { position: relative; height: 220px; }
+
+/* ── TABLE CARD ── */
+.table-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+  overflow: hidden;
+}
+.table-header {
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--gray-100);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.table-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--navy); }
+.table-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  transition: border-color 0.2s;
+}
+.search-box:focus-within { border-color: var(--orange); }
+.search-box svg { color: var(--gray-400); width: 15px; height: 15px; flex-shrink: 0; }
+.search-box input { border: none; background: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--gray-800); width: 160px; }
+.filter-select {
+  padding: 7px 12px;
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--gray-800);
+  background: var(--gray-50);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.filter-select:focus { border-color: var(--orange); }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: var(--gray-50);
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--gray-100);
+}
+tbody tr { border-bottom: 1px solid var(--gray-100); transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--gray-50); }
+tbody td { padding: 12px 16px; font-size: 13px; color: var(--gray-600); }
+tbody td strong { color: var(--gray-800); font-weight: 600; }
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+.status-badge.completed { background: var(--green-pale); color: var(--green); }
+.status-badge.completed::before { background: var(--green); }
+.status-badge.pending { background: var(--gold-pale); color: var(--gold); }
+.status-badge.pending::before { background: var(--gold); }
+.status-badge.processing { background: rgba(13,27,62,0.08); color: var(--navy); }
+.status-badge.processing::before { background: var(--navy); }
+.status-badge.cancelled { background: var(--red-pale); color: var(--red); }
+.status-badge.cancelled::before { background: var(--red); }
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--gray-400);
+}
+.empty-state svg { width: 48px; height: 48px; margin: 0 auto 12px; display: block; opacity: 0.4; }
+.empty-state p { font-size: 14px; }
+
+/* ── ANALYTICS ── */
+.analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.trend-table { width: 100%; border-collapse: collapse; }
+.trend-table th {
+  background: var(--gray-50);
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-100);
+}
+.trend-table td { padding: 10px 14px; font-size: 13px; color: var(--gray-600); border-bottom: 1px solid var(--gray-100); }
+.trend-table tr:last-child td { border-bottom: none; }
+.trend-up { color: var(--green); font-weight: 600; }
+.trend-down { color: var(--red); font-weight: 600; }
+.trend-neutral { color: var(--gray-400); font-weight: 600; }
+.service-bar-wrap { margin-bottom: 12px; }
+.service-bar-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; color: var(--gray-600); }
+.service-bar-label span:last-child { font-weight: 600; color: var(--gray-800); }
+.service-bar { height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden; }
+.service-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--navy), var(--orange)); }
+
+/* ── NOTIFICATION ── */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--navy);
+  color: var(--white);
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s;
+  border-left: 4px solid var(--orange);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── WELCOME BANNER ── */
+.welcome-banner {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  position: relative;
+}
+.welcome-banner::after {
+  content: '';
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,101,10,0.2) 0%, transparent 70%);
+  right: -80px; top: -80px;
+}
+.welcome-text h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); }
+.welcome-text p { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+.welcome-badge {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.welcome-badge-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: var(--orange); }
+.welcome-badge-label { font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+/* Responsive */
+@media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2,1fr); } .charts-grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .main-content, .main-content.expanded { margin-left: 0; padding: 16px; } .stats-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-left">
+    <div class="login-brand">
+      <div class="brand-sure">sure</div>
+      <div class="brand-diag">Diagnostics</div>
+    </div>
+    <div class="login-tagline">Your Partner<br>in <span>Health</span> &<br>Diagnostics</div>
+    <div class="login-desc">Access your referral dashboard, track patient results, and monitor your rebate earnings — all in one secure portal.</div>
+    <div class="login-stats">
+      <div class="login-stat">
+        <div class="login-stat-num">100%</div>
+        <div class="login-stat-label">Result Accuracy</div>
+      </div>
+      <div class="login-stat">
+        <div class="login-stat-num">5</div>
+        <div class="login-stat-label">Branches</div>
+      </div>
+      <div class="login-stat">
+        <div class="login-stat-num">24hr</div>
+        <div class="login-stat-label">TAT Commitment</div>
+      </div>
+    </div>
+  </div>
+  <div class="login-right">
+    <div class="login-form-wrap">
+      <div class="login-form-title">Partner Login</div>
+      <div class="login-form-sub">Sign in to your Partners Hub account</div>
+      <div class="form-group">
+        <label class="form-label">Partner ID / Email</label>
+        <input type="text" id="login-id" class="form-input" placeholder="e.g. partner001" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="login-pass" class="form-input" placeholder="Enter your password" autocomplete="current-password">
+      </div>
+      <button class="btn-login" onclick="doLogin()">Sign In to Dashboard</button>
+      <div class="login-error" id="login-error">Invalid credentials. Please try again.</div>
+      <div class="demo-hint">
+        <p>Demo Accounts</p>
+        <div>ID: <code>partner001</code> &nbsp; PW: <code>demo123</code></div>
+        <div style="margin-top:4px">ID: <code>partner002</code> &nbsp; PW: <code>demo123</code></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-text">
+          <div class="brand-sure">sure</div>
+          <div class="brand-diag">Diagnostics</div>
+          <div class="brand-tag">Partners Hub</div>
+        </div>
+        <button class="collapse-btn" onclick="toggleSidebar()" title="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+      </div>
+      <div class="partner-badge">
+        <div class="partner-badge-label">Logged in as</div>
+        <div class="partner-badge-name" id="sidebar-partner-name">—</div>
+        <div class="partner-badge-type" id="sidebar-partner-type">—</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a class="nav-item active" data-tip="Dashboard" onclick="showPage('dashboard')" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a class="nav-item" data-tip="My Patients" onclick="showPage('patients')" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span class="nav-label">My Patients</span>
+        </a>
+        <a class="nav-item" data-tip="Analytics" onclick="showPage('analytics')" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="nav-label">Analytics</span>
+        </a>
+        <div class="nav-section-label" style="margin-top:8px">Rebates</div>
+        <a class="nav-item" data-tip="Rebate Statement" onclick="showPage('rebates')" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="nav-label">Rebate Statement</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-logout" onclick="doLogout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span class="logout-label">Sign Out</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main-content" id="main-content">
+
+      <!-- DASHBOARD PAGE -->
+      <div id="page-dashboard" class="page active">
+        <div class="welcome-banner">
+          <div class="welcome-text">
+            <h2 id="welcome-name">Welcome back!</h2>
+            <p id="welcome-date">Loading your dashboard...</p>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;position:relative;z-index:1">
+            <select class="filter-select" id="dash-branch-filter" onchange="renderDashboard()" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:var(--white);font-size:12px;padding:7px 12px">
+              <option value="" style="color:var(--navy)">All Branches</option>
+              <option value="Ikeja" style="color:var(--navy)">Ikeja</option>
+              <option value="Palm Avenue" style="color:var(--navy)">Palm Avenue</option>
+              <option value="Ilasa" style="color:var(--navy)">Ilasa</option>
+              <option value="OAUTH" style="color:var(--navy)">OAUTH</option>
+              <option value="Ijofi" style="color:var(--navy)">Ijofi</option>
+            </select>
+            <div class="welcome-badge">
+              <div class="welcome-badge-num" id="welcome-rebate">₦0</div>
+              <div class="welcome-badge-label">Rebate Due</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Branch mini cards -->
+        <div id="dash-branch-cards" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px"></div>
+
+        <div class="stats-grid">
+          <div class="stat-card blue">
+            <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            <div class="stat-label">Total Referrals</div>
+            <div class="stat-value" id="stat-referrals">0</div>
+            <div class="stat-change" id="stat-referrals-change">All time</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-value" id="stat-revenue">₦0</div>
+            <div class="stat-change">Generated from referrals</div>
+          </div>
+          <div class="stat-card teal">
+            <div class="stat-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+            <div class="stat-label">Rebates Due</div>
+            <div class="stat-value" id="stat-rebate">₦0</div>
+            <div class="stat-change">Pending payment</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <div class="stat-label">Active Patients</div>
+            <div class="stat-value" id="stat-active">0</div>
+            <div class="stat-change">Processing / Pending</div>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-title">Monthly Referral Trend</div>
+            <div class="chart-sub">Number of patient referrals per month</div>
+            <div class="chart-wrap"><canvas id="bar-chart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Status Breakdown</div>
+            <div class="chart-sub">Current patient status distribution</div>
+            <div class="chart-wrap"><canvas id="pie-chart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Recent Patients</div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th>Patient Name</th><th>Case ID</th><th>Date</th><th>Tests</th><th>Branch</th><th>Fee Paid</th><th>Rebate Due</th><th>Status</th>
+              </tr></thead>
+              <tbody id="recent-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATIENTS PAGE -->
+      <div id="page-patients" class="page">
+        <div class="page-header">
+          <div class="page-title">My Patients</div>
+          <div class="page-sub">Full list of your referred patients and their diagnostic records</div>
+        </div>
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title" id="patients-count">All Patients</div>
+            <div class="table-controls">
+              <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="search-patients" placeholder="Search by name or ID..." oninput="renderPatients()">
+              </div>
+              <select class="filter-select" id="filter-status" onchange="renderPatients()">
+                <option value="">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="processing">Processing</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select class="filter-select" id="filter-branch" onchange="renderPatients()">
+                <option value="">All Branches</option>
+                <option value="Ikeja">Ikeja</option>
+                <option value="Palm Avenue">Palm Avenue</option>
+                <option value="Ilasa">Ilasa</option>
+                <option value="OAUTH">OAUTH</option>
+                <option value="Ijofi">Ijofi</option>
+              </select>
+              <select class="filter-select" id="filter-month" onchange="renderPatients()">
+                <option value="">All Months</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th>Patient Name</th><th>Case ID</th><th>Date Referred</th><th>Tests / Investigations</th><th>Branch</th><th>Type</th><th>Fee Paid</th><th>Fee Due</th><th>Rebate Due</th><th>Status</th>
+              </tr></thead>
+              <tbody id="patients-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS PAGE -->
+      <div id="page-analytics" class="page">
+        <div class="page-header">
+          <div class="page-title">Analytics</div>
+          <div class="page-sub">Your referral performance breakdown and trends</div>
+        </div>
+        <div class="analytics-grid">
+          <div class="chart-card">
+            <div class="chart-title">Month-on-Month Performance</div>
+            <div class="chart-sub">Referrals and revenue by month</div>
+            <div style="overflow-x:auto; margin-top:8px">
+              <table class="trend-table" id="mom-table">
+                <thead><tr><th>Month</th><th>Referrals</th><th>Revenue</th><th>Rebate</th><th>Trend</th></tr></thead>
+                <tbody id="mom-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Top Services / Tests</div>
+            <div class="chart-sub">Most referred diagnostic services</div>
+            <div id="services-bars" style="margin-top:16px"></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Revenue Trend</div>
+          <div class="chart-sub">Monthly revenue generated from your referrals</div>
+          <div class="chart-wrap" style="height:200px"><canvas id="revenue-chart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- REBATES PAGE -->
+      <div id="page-rebates" class="page">
+        <div class="page-header">
+          <div class="page-title">Rebate Statement</div>
+          <div class="page-sub">Your earnings summary and payment history</div>
+        </div>
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:20px">
+          <div class="stat-card teal">
+            <div class="stat-label">Total Rebate Earned</div>
+            <div class="stat-value" id="total-rebate-earned">₦0</div>
+            <div class="stat-change">All time</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-label">Rebate Paid</div>
+            <div class="stat-value" id="total-rebate-paid">₦0</div>
+            <div class="stat-change">Already disbursed</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-label">Outstanding Rebate</div>
+            <div class="stat-value" id="total-rebate-outstanding">₦0</div>
+            <div class="stat-change">Pending payment</div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Monthly Rebate Breakdown</div>
+            <select class="filter-select" id="rebate-year" onchange="renderRebates()">
+              <option value="">All Years</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th>Month</th><th>Patients</th><th>Revenue</th><th>Rebate %</th><th>Rebate Amount</th><th>Status</th>
+              </tr></thead>
+              <tbody id="rebate-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// SUPABASE CONFIGURATION — same credentials as admin console
+// ════════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://zswlgmylduxxzbkzbnwi.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_yaTWRRzNMrIoH7kG5oUHjg_7MYGI8cW';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── HELPERS ─────────────────────────────────────────────────
+const fmt = n => '₦' + Number(n||0).toLocaleString('en-NG');
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function dbToPatient(r) {
+  return {
+    id:          r.id,
+    caseId:      r.case_id  || r.id,
+    regNo:       r.reg_no   || '',
+    name:        r.name,
+    partnerId:   r.partner_id,
+    date:        r.date,
+    tests:       r.tests     || '',
+    branch:      r.branch    || '',
+    amount:      Number(r.amount    || 0),
+    totalFee:    Number(r.total_fee || 0),
+    feeDue:      Number(r.fee_due   || 0),
+    caseType:    r.case_type || '',
+    age:         r.age       || '',
+    phone:       r.phone     || '',
+    agent:       r.agent     || '',
+    status:      r.status    || 'completed',
+  };
+}
+
+// Rebate calc — supports % or flat ₦
+function calcRebate(patient, partner) {
+  const p = partner || currentPartner;
+  if (!p) return 0;
+  if (p.rebateType === 'flat') return p.rebateFlat || 0;
+  return patient.amount * (p.rebateRate || 0.05);
+}
+function fmtRebateRule(p) {
+  if (!p) return '—';
+  if (p.rebateType === 'flat') return fmt(p.rebateFlat || 0) + ' flat/ref';
+  return ((p.rebateRate||0.05)*100).toFixed(1) + '% of fee';
+}
+
+// ── AUTH ────────────────────────────────────────────────────
+let currentPartner = null;
+let _myPatients    = [];
+
+function showLoader(on) {
+  const btn = document.querySelector('.btn-login');
+  if (btn) btn.textContent = on ? 'Signing in…' : 'Sign In to Dashboard';
+}
+
+async function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  if (!id || !pw) { errEl.style.display = 'block'; errEl.textContent = 'Please enter your Partner ID and password.'; return; }
+  showLoader(true);
+  try {
+    // Look up partner + auth in one query
+    const { data: authRow, error: ae } = await db
+      .from('partner_auth')
+      .select('portal_password, partners(*)')
+      .eq('partner_id', id)
+      .single();
+
+    if (ae || !authRow) throw new Error('Partner not found');
+    if (authRow.portal_password !== pw) throw new Error('Incorrect password');
+
+    const p = authRow.partners;
+    if (!p.active) throw new Error('Your account is inactive. Contact Sure Diagnostics.');
+
+    currentPartner = {
+      id:          p.id,
+      name:        p.name,
+      type:        p.type,
+      phone:       p.phone        || '',
+      email:       p.email        || '',
+      rebateType:  p.rebate_type  || 'percentage',
+      rebateRate:  Number(p.rebate_rate || 0.05),
+      rebateFlat:  Number(p.rebate_flat || 0),
+      active:      p.active,
+      joined:      p.joined       || '',
+    };
+
+    // Load this partner's patients
+    await loadMyPatients();
+
+    sessionStorage.setItem('sd_partner', JSON.stringify(currentPartner));
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    initApp();
+  } catch (err) {
+    errEl.textContent = err.message || 'Invalid credentials. Please try again.';
+    errEl.style.display = 'block';
+  } finally {
+    showLoader(false);
+  }
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function doLogout() {
+  sessionStorage.removeItem('sd_partner');
+  currentPartner = null;
+  _myPatients = [];
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+async function loadMyPatients() {
+  const { data, error } = await db
+    .from('patients')
+    .select('*')
+    .eq('partner_id', currentPartner.id)
+    .order('date', { ascending: false });
+  if (error) throw error;
+  _myPatients = (data || []).map(dbToPatient);
+}
+
+function getMyPatients() { return _myPatients; }
+
+// ── SIDEBAR TOGGLE ──────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const mc = document.getElementById('main-content');
+  sb.classList.toggle('collapsed');
+  mc.classList.toggle('expanded');
+  localStorage.setItem('sd_portal_sidebar_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
+}
+function restoreSidebar() {
+  if (localStorage.getItem('sd_portal_sidebar_collapsed') === '1') {
+    document.getElementById('sidebar')?.classList.add('collapsed');
+    document.getElementById('main-content')?.classList.add('expanded');
+  }
+}
+
+// ── NAV ──
+async function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  // Refresh data from Supabase on every page switch
+  await loadMyPatients();
+  if (name === 'patients') renderPatients();
+  if (name === 'analytics') renderAnalytics();
+  if (name === 'rebates') renderRebates();
+  if (name === 'dashboard') renderDashboard();
+}
+
+// ── INIT ────────────────────────────────────────────────────
+function initApp() {
+  restoreSidebar();
+  document.getElementById('sidebar-partner-name').textContent = currentPartner.name;
+  document.getElementById('sidebar-partner-type').textContent = currentPartner.type;
+  document.getElementById('welcome-name').textContent = 'Welcome, ' + currentPartner.name + '!';
+  document.getElementById('welcome-date').textContent = 'Today is ' + new Date().toLocaleDateString('en-NG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  renderDashboard();
+  subscribeRealtime();
+}
+
+function renderDashboard() {
+  const allPts = getMyPatients();
+  const branchFilter = document.getElementById('dash-branch-filter')?.value || '';
+  const pts = branchFilter ? allPts.filter(p => p.branch === branchFilter) : allPts;
+
+  const total = pts.length;
+  const revenue = pts.reduce((s,p) => s + p.amount, 0);
+  const rebate = pts.reduce((s,p) => s + calcRebate(p), 0);
+  const active = pts.filter(p => p.status === 'processing' || p.status === 'pending').length;
+
+  document.getElementById('stat-referrals').textContent = total;
+  document.getElementById('stat-revenue').textContent = fmt(revenue);
+  document.getElementById('stat-rebate').textContent = fmt(rebate);
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('welcome-rebate').textContent = fmt(rebate);
+  document.getElementById('stat-referrals-change').textContent = `${total} patients referred`;
+
+  // Branch mini cards
+  const PORTAL_BRANCHES = ['Ikeja','Palm Avenue','Ilasa','OAUTH','Ijofi'];
+  const PORTAL_BRANCH_COLORS = ['#E8650A','#0A8A7A','#0D1B3E','#D4A017','#6B3FA0'];
+  const branchEl = document.getElementById('dash-branch-cards');
+  if (branchEl) {
+    branchEl.innerHTML = PORTAL_BRANCHES.map((b, i) => {
+      const bPats = allPts.filter(p => p.branch === b);
+      const bRev = bPats.reduce((s,p) => s + p.amount, 0);
+      const isSelected = branchFilter === b;
+      return `<div onclick="setDashBranch('${b}')" style="background:var(--white);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow-sm);border:1px solid var(--gray-100);border-top:3px solid ${isSelected?PORTAL_BRANCH_COLORS[i]:'var(--gray-100)'};cursor:pointer;transition:all 0.2s;${isSelected?'background:var(--orange-pale);':''}" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+        <div style="font-family:Syne,sans-serif;font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b}</div>
+        <div style="font-family:Syne,sans-serif;font-size:20px;font-weight:700;color:${PORTAL_BRANCH_COLORS[i]};margin:3px 0 1px">${bPats.length}</div>
+        <div style="font-size:10px;color:var(--teal);font-weight:600">${fmt(bRev)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Monthly bar chart
+  const monthData = {};
+  pts.forEach(p => {
+    const d = new Date(p.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (!monthData[key]) monthData[key] = { label: MONTHS[d.getMonth()] + ' ' + d.getFullYear(), count: 0 };
+    monthData[key].count++;
+  });
+  const sortedMonths = Object.keys(monthData).sort().slice(-8);
+  const barLabels = sortedMonths.map(k => monthData[k].label);
+  const barCounts = sortedMonths.map(k => monthData[k].count);
+
+  const barCtx = document.getElementById('bar-chart').getContext('2d');
+  if (window._barChart) window._barChart.destroy();
+  window._barChart = new Chart(barCtx, {
+    type: 'bar',
+    data: { labels: barLabels, datasets: [{ data: barCounts, backgroundColor: 'rgba(232,101,10,0.85)', borderRadius: 6, borderSkipped: false }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'DM Sans', size: 11 } }, grid: { color: '#E8EAF2' } }, x: { ticks: { font: { family: 'DM Sans', size: 11 } }, grid: { display: false } } } }
+  });
+
+  // Pie — branch distribution for this partner
+  const branchCounts = {};
+  allPts.forEach(p => branchCounts[p.branch] = (branchCounts[p.branch]||0) + 1);
+  const pieCtx = document.getElementById('pie-chart').getContext('2d');
+  if (window._pieChart) window._pieChart.destroy();
+  window._pieChart = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(branchCounts),
+      datasets: [{ data: Object.values(branchCounts), backgroundColor: PORTAL_BRANCH_COLORS, borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, padding: 12 } } }, cutout: '65%' }
+  });
+
+  // Recent 5
+  const recent = [...pts].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,5);
+  const tbody = document.getElementById('recent-tbody');
+  tbody.innerHTML = recent.length ? recent.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong>${p.age ? `<br><span style="font-size:10px;color:var(--gray-400)">${p.age}</span>` : ''}</td>
+      <td style="font-family:monospace;font-size:11px">${p.caseId||p.id}</td>
+      <td>${new Date(p.date).toLocaleDateString('en-NG')}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.tests}">${p.tests}</td>
+      <td>${p.branch}</td>
+      <td>${fmt(p.amount)}</td>
+      <td style="color:var(--teal);font-weight:600">${fmt(calcRebate(p))}</td>
+      <td><span class="status-badge ${p.status}">${cap(p.status)}</span></td>
+    </tr>
+  `).join('') : '<tr><td colspan="8"><div class="empty-state"><p>No patients yet. Check back after admin adds records.</p></div></td></tr>';
+}
+
+function setDashBranch(branch) {
+  const sel = document.getElementById('dash-branch-filter');
+  if (sel) { sel.value = sel.value === branch ? '' : branch; }
+  renderDashboard();
+}
+
+function renderPatients() {
+  const pts = getMyPatients();
+  const search = document.getElementById('search-patients').value.toLowerCase();
+  const statusF = document.getElementById('filter-status').value;
+  const branchF = document.getElementById('filter-branch').value;
+  const monthF = document.getElementById('filter-month').value;
+
+  // Populate month filter
+  const months = [...new Set(pts.map(p => { const d = new Date(p.date); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }))].sort().reverse();
+  const mSel = document.getElementById('filter-month');
+  const curMonth = mSel.value;
+  mSel.innerHTML = '<option value="">All Months</option>' + months.map(m => { const [y, mo] = m.split('-'); return `<option value="${m}" ${m === curMonth ? 'selected' : ''}>${MONTHS[parseInt(mo)-1]} ${y}</option>`; }).join('');
+
+  let filtered = pts.filter(p => {
+    const matchSearch = p.name.toLowerCase().includes(search) || (p.id||'').toLowerCase().includes(search);
+    const matchStatus = !statusF || p.status === statusF;
+    const matchBranch = !branchF || p.branch === branchF;
+    const matchMonth = !monthF || p.date.startsWith(monthF);
+    return matchSearch && matchStatus && matchBranch && matchMonth;
+  });
+  filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  document.getElementById('patients-count').textContent = `Patients (${filtered.length})`;
+  const tbody = document.getElementById('patients-tbody');
+  tbody.innerHTML = filtered.length ? filtered.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong>${p.age ? `<br><span style="font-size:10px;color:var(--gray-400)">${p.age}</span>` : ''}</td>
+      <td style="font-family:monospace;font-size:11px">${p.caseId||p.id}</td>
+      <td>${new Date(p.date).toLocaleDateString('en-NG')}</td>
+      <td>${p.tests}</td>
+      <td>${p.branch}</td>
+      <td>${p.caseType ? `<span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(13,27,62,0.08);color:var(--navy)">${p.caseType}</span>` : '—'}</td>
+      <td>${fmt(p.amount)}</td>
+      <td style="color:${(p.feeDue||0)>0?'var(--red)':'var(--gray-400)'};font-weight:${(p.feeDue||0)>0?'600':'400'}">${(p.feeDue||0)>0?fmt(p.feeDue):'—'}</td>
+      <td style="color:var(--teal);font-weight:600">${fmt(calcRebate(p))}</td>
+      <td><span class="status-badge ${p.status}">${cap(p.status)}</span></td>
+    </tr>
+  `).join('') : '<tr><td colspan="10"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No patients match your filters</p></div></td></tr>';
+}
+
+function renderAnalytics() {
+  const pts = getMyPatients();
+
+  // Month-on-month table
+  const monthMap = {};
+  pts.forEach(p => {
+    const d = new Date(p.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (!monthMap[key]) monthMap[key] = { label: MONTHS[d.getMonth()] + ' ' + d.getFullYear(), count: 0, rev: 0, reb: 0 };
+    monthMap[key].count++;
+    monthMap[key].rev += p.amount;
+    monthMap[key].reb += calcRebate(p);
+  });
+  const sortedKeys = Object.keys(monthMap).sort();
+  let prevCount = null;
+  const momTbody = document.getElementById('mom-tbody');
+  momTbody.innerHTML = sortedKeys.map(k => {
+    const m = monthMap[k];
+    let trendHtml = '<span class="trend-neutral">—</span>';
+    if (prevCount !== null) {
+      if (m.count > prevCount) trendHtml = `<span class="trend-up">↑ +${m.count - prevCount}</span>`;
+      else if (m.count < prevCount) trendHtml = `<span class="trend-down">↓ -${prevCount - m.count}</span>`;
+      else trendHtml = '<span class="trend-neutral">→ 0</span>';
+    }
+    prevCount = m.count;
+    return `<tr><td>${m.label}</td><td>${m.count}</td><td>${fmt(m.rev)}</td><td>${fmt(m.reb)}</td><td>${trendHtml}</td></tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:20px">No data</td></tr>';
+
+  // Services bar chart
+  const svcMap = {};
+  pts.forEach(p => {
+    p.tests.split(',').forEach(t => {
+      const key = t.trim();
+      svcMap[key] = (svcMap[key] || 0) + 1;
+    });
+  });
+  const sorted = Object.entries(svcMap).sort((a,b) => b[1]-a[1]).slice(0,7);
+  const maxVal = sorted[0]?.[1] || 1;
+  document.getElementById('services-bars').innerHTML = sorted.map(([name, count]) => `
+    <div class="service-bar-wrap">
+      <div class="service-bar-label"><span>${name}</span><span>${count} referral${count!==1?'s':''}</span></div>
+      <div class="service-bar"><div class="service-bar-fill" style="width:${(count/maxVal*100)}%"></div></div>
+    </div>
+  `).join('') || '<p style="color:var(--gray-400);font-size:13px">No data available</p>';
+
+  // Revenue line chart
+  const revLabels = sortedKeys.map(k => monthMap[k].label);
+  const revData = sortedKeys.map(k => monthMap[k].rev);
+  const revCtx = document.getElementById('revenue-chart').getContext('2d');
+  if (window._revChart) window._revChart.destroy();
+  window._revChart = new Chart(revCtx, {
+    type: 'line',
+    data: { labels: revLabels, datasets: [{ data: revData, borderColor: '#0A8A7A', backgroundColor: 'rgba(10,138,122,0.08)', fill: true, tension: 0.4, pointBackgroundColor: '#0A8A7A', pointRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '₦' + v.toLocaleString(), font: { family: 'DM Sans', size: 11 } }, grid: { color: '#E8EAF2' } }, x: { ticks: { font: { family: 'DM Sans', size: 11 } }, grid: { display: false } } } }
+  });
+}
+
+function renderRebates() {
+  const pts = getMyPatients();
+
+  // Year filter
+  const years = [...new Set(pts.map(p => new Date(p.date).getFullYear()))].sort().reverse();
+  const ySelect = document.getElementById('rebate-year');
+  const curYear = ySelect.value;
+  ySelect.innerHTML = '<option value="">All Years</option>' + years.map(y => `<option value="${y}" ${y == curYear ? 'selected' : ''}>${y}</option>`).join('');
+
+  const filtered = curYear ? pts.filter(p => new Date(p.date).getFullYear() == curYear) : pts;
+
+  const monthMap = {};
+  filtered.forEach(p => {
+    const d = new Date(p.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (!monthMap[key]) monthMap[key] = { label: MONTHS[d.getMonth()] + ' ' + d.getFullYear(), count: 0, rev: 0, reb: 0 };
+    monthMap[key].count++;
+    monthMap[key].rev += p.amount;
+    monthMap[key].reb += calcRebate(p);
+  });
+
+  const total = filtered.reduce((s,p) => s + calcRebate(p), 0);
+  const completedRev = filtered.filter(p => p.status === 'completed').reduce((s,p) => s + calcRebate(p), 0);
+
+  document.getElementById('total-rebate-earned').textContent = fmt(total);
+  document.getElementById('total-rebate-paid').textContent = fmt(completedRev);
+  document.getElementById('total-rebate-outstanding').textContent = fmt(total - completedRev);
+
+  const sortedKeys = Object.keys(monthMap).sort().reverse();
+  const tbody = document.getElementById('rebate-tbody');
+  tbody.innerHTML = sortedKeys.map(k => {
+    const m = monthMap[k];
+    const rate = fmtRebateRule(currentPartner);
+    const isPaid = true; // simplification: completed months = paid
+    return `<tr>
+      <td><strong>${m.label}</strong></td>
+      <td>${m.count}</td>
+      <td>${fmt(m.rev)}</td>
+      <td>${rate}</td>
+      <td style="color:var(--teal);font-weight:600">${fmt(m.reb)}</td>
+      <td><span class="status-badge completed">Accrued</span></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--gray-400)">No rebate data</td></tr>';
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── BOOT ────────────────────────────────────────────────────
+// Restore session if partner was already logged in
+(async () => {
+  const saved = sessionStorage.getItem('sd_partner');
+  if (saved) {
+    try {
+      currentPartner = JSON.parse(saved);
+      // Re-validate partner is still active in DB
+      const { data: authRow } = await db
+        .from('partner_auth')
+        .select('portal_password, partners(*)')
+        .eq('partner_id', currentPartner.id)
+        .single();
+      if (authRow?.partners?.active) {
+        const p = authRow.partners;
+        currentPartner = {
+          id: p.id, name: p.name, type: p.type,
+          phone: p.phone||'', email: p.email||'',
+          rebateType: p.rebate_type||'percentage',
+          rebateRate: Number(p.rebate_rate||0.05),
+          rebateFlat: Number(p.rebate_flat||0),
+          active: p.active, joined: p.joined||'',
+        };
+        await loadMyPatients();
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').classList.add('visible');
+        initApp();
+      } else {
+        sessionStorage.removeItem('sd_partner');
+      }
+    } catch { sessionStorage.removeItem('sd_partner'); }
+  }
+})();
+
+// Real-time updates from Supabase — when admin changes data the
+// partner portal auto-refreshes within seconds
+let _realtimeChannel = null;
+function subscribeRealtime() {
+  if (_realtimeChannel) return;
+  _realtimeChannel = db
+    .channel('patients-changes')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'patients', filter: `partner_id=eq.${currentPartner?.id}` },
+      async () => {
+        await loadMyPatients();
+        renderDashboard();
+        showToast('Dashboard updated with latest data ✓');
+      }
+    )
+    .subscribe();
+}
+</script>
+</body>
+</html>
