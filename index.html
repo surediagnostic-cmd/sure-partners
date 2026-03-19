@@ -955,8 +955,26 @@ function calcRebate(patient, partner) {
 }
 function fmtRebateRule(p) {
   if (!p) return '—';
-  if (p.rebateType === 'flat') return fmt(p.rebateFlat || 0) + ' flat/ref';
-  return ((p.rebateRate||0.05)*100).toFixed(1) + '% of fee';
+  // If partner has custom flat rate
+  if (p.rebateType === 'flat') return fmt(p.rebateFlat || 0) + ' flat per referral';
+  // If partner has non-default custom rate
+  if (p.rebateRate && p.rebateRate !== 0.05) return ((p.rebateRate)*100).toFixed(1) + '% (partner rate)';
+  // Otherwise uses admin-defined rules engine (tiered by case type & amount)
+  return 'Tiered (by case type & amount)';
+}
+
+// Get the effective rebate description for a specific patient
+function fmtPatientRebateRate(patient, partner) {
+  const p = partner || currentPartner;
+  if (!p) return '—';
+  if (p.rebateType === 'flat') return fmt(p.rebateFlat || 0) + ' flat';
+  if (p.rebateRate && p.rebateRate !== 0.05) {
+    return ((p.rebateRate)*100).toFixed(1) + '%';
+  }
+  // Show what the rules engine calculated
+  const rebate = calcRebate(patient, p);
+  const pct = patient.amount > 0 ? ((rebate / patient.amount) * 100).toFixed(1) + '%' : fmt(rebate);
+  return pct + ' (tiered)';
 }
 
 // ── AUTH ────────────────────────────────────────────────────
@@ -986,8 +1004,8 @@ async function doLogin() {
     if (ae || !authRow) throw new Error('Partner not found');
     if (authRow.portal_password !== pw) throw new Error('Incorrect password');
 
-    const p = authRow.partners;
-    if (!p.active) throw new Error('Your account is inactive. Contact Sure Diagnostics.');
+    const p = Array.isArray(authRow.partners) ? authRow.partners[0] : authRow.partners;
+    if (!p || !p.active) throw new Error(!p ? 'Partner not found' : 'Your account is inactive. Contact Sure Diagnostics.');
 
     currentPartner = {
       id:          p.id,
@@ -1341,30 +1359,45 @@ function renderRebates() {
   filtered.forEach(p => {
     const d = new Date(p.date);
     const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    if (!monthMap[key]) monthMap[key] = { label: MONTHS[d.getMonth()] + ' ' + d.getFullYear(), count: 0, rev: 0, reb: 0 };
+    if (!monthMap[key]) monthMap[key] = { label: MONTHS[d.getMonth()] + ' ' + d.getFullYear(), count: 0, rev: 0, reb: 0, patients: [] };
     monthMap[key].count++;
-    monthMap[key].rev += p.amount;
-    monthMap[key].reb += calcRebate(p);
+    monthMap[key].rev  += p.amount;
+    monthMap[key].reb  += calcRebate(p);
+    monthMap[key].patients.push(p);
   });
 
-  const total = filtered.reduce((s,p) => s + calcRebate(p), 0);
+  const total        = filtered.reduce((s,p) => s + calcRebate(p), 0);
   const completedRev = filtered.filter(p => p.status === 'completed').reduce((s,p) => s + calcRebate(p), 0);
 
-  document.getElementById('total-rebate-earned').textContent = fmt(total);
-  document.getElementById('total-rebate-paid').textContent = fmt(completedRev);
+  document.getElementById('total-rebate-earned').textContent      = fmt(total);
+  document.getElementById('total-rebate-paid').textContent        = fmt(completedRev);
   document.getElementById('total-rebate-outstanding').textContent = fmt(total - completedRev);
 
   const sortedKeys = Object.keys(monthMap).sort().reverse();
   const tbody = document.getElementById('rebate-tbody');
   tbody.innerHTML = sortedKeys.map(k => {
     const m = monthMap[k];
-    const rate = fmtRebateRule(currentPartner);
-    const isPaid = true; // simplification: completed months = paid
+    // Build effective rate display — show breakdown by case type if mixed
+    const byType = {};
+    m.patients.forEach(p => {
+      const t = p.caseType || 'Lab';
+      if (!byType[t]) byType[t] = { count:0, rev:0, reb:0 };
+      byType[t].count++;
+      byType[t].rev += p.amount;
+      byType[t].reb += calcRebate(p);
+    });
+    const typeList = Object.entries(byType);
+    const rateDisplay = typeList.length === 1
+      ? `${typeList[0][0]}: ${m.rev > 0 ? ((m.reb/m.rev)*100).toFixed(1)+'%' : fmt(m.reb)}`
+      : typeList.map(([type, d]) =>
+          `${type}: ${d.rev > 0 ? ((d.reb/d.rev)*100).toFixed(1)+'%' : fmt(d.reb)}`
+        ).join(' · ');
+
     return `<tr>
       <td><strong>${m.label}</strong></td>
       <td>${m.count}</td>
       <td>${fmt(m.rev)}</td>
-      <td>${rate}</td>
+      <td style="font-size:11px;color:var(--gray-600)">${rateDisplay}</td>
       <td style="color:var(--teal);font-weight:600">${fmt(m.reb)}</td>
       <td><span class="status-badge completed">Accrued</span></td>
     </tr>`;
@@ -1393,7 +1426,7 @@ function showToast(msg, type) {
         .eq('partner_id', currentPartner.id)
         .single();
       if (authRow?.partners?.active) {
-        const p = authRow.partners;
+        const p = Array.isArray(authRow.partners) ? authRow.partners[0] : authRow.partners;
         currentPartner = {
           id: p.id, name: p.name, type: p.type,
           phone: p.phone||'', email: p.email||'',
