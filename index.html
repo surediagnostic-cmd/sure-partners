@@ -73,61 +73,61 @@ body { font-family: 'DM Sans', sans-serif; background: var(--off-white); color: 
   padding: 60px;
   position: relative;
   z-index: 1;
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
 }
-.login-brand {
-  margin-bottom: 60px;
+.login-left.hidden {
+  flex: 0;
+  padding: 0;
+  opacity: 0;
+  width: 0;
+  min-width: 0;
+  pointer-events: none;
 }
+.login-panel-toggle {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.7);
+  transition: all 0.2s;
+}
+.login-panel-toggle:hover { background: rgba(255,255,255,0.2); color: var(--white); }
+.login-panel-toggle svg { width: 16px; height: 16px; transition: transform 0.3s; }
+.login-panel-toggle.panel-hidden svg { transform: rotate(180deg); }
+/* Hide toggle on desktop — only show on mobile */
+@media (min-width: 769px) { .login-panel-toggle { display: none; } }
+.login-brand { margin-bottom: 60px; }
 .login-brand .brand-sure {
   font-family: 'Syne', sans-serif;
-  font-size: 42px;
-  font-weight: 800;
-  color: var(--orange);
-  letter-spacing: -1px;
-  line-height: 1;
+  font-size: 42px; font-weight: 800;
+  color: var(--orange); letter-spacing: -1px; line-height: 1;
 }
 .login-brand .brand-diag {
   font-family: 'Syne', sans-serif;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 18px; font-weight: 600;
   color: rgba(255,255,255,0.6);
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  margin-top: 2px;
+  letter-spacing: 4px; text-transform: uppercase; margin-top: 2px;
 }
 .login-tagline {
   font-family: 'Syne', sans-serif;
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--white);
-  line-height: 1.2;
-  margin-bottom: 24px;
+  font-size: 36px; font-weight: 700;
+  color: var(--white); line-height: 1.2; margin-bottom: 24px;
 }
 .login-tagline span { color: var(--orange); }
-.login-desc {
-  color: rgba(255,255,255,0.55);
-  font-size: 15px;
-  line-height: 1.7;
-  max-width: 420px;
-}
-.login-stats {
-  display: flex;
-  gap: 40px;
-  margin-top: 60px;
-}
+.login-desc { color: rgba(255,255,255,0.55); font-size: 15px; line-height: 1.7; max-width: 420px; }
+.login-stats { display: flex; gap: 40px; margin-top: 60px; }
 .login-stat { }
-.login-stat-num {
-  font-family: 'Syne', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--orange);
-}
-.login-stat-label {
-  font-size: 12px;
-  color: rgba(255,255,255,0.45);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 2px;
-}
+.login-stat-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: var(--orange); }
+.login-stat-label { font-size: 12px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
 .login-right {
   width: 480px;
   background: var(--white);
@@ -137,6 +137,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--off-white); color: 
   padding: 60px 50px;
   position: relative;
   z-index: 1;
+}
+/* Mobile: hide left panel by default, full-width form */
+@media (max-width: 768px) {
+  .login-left { display: none; }
+  .login-right { width: 100%; padding: 40px 24px; }
 }
 .login-form-wrap { width: 100%; }
 .login-form-title {
@@ -577,7 +582,11 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
-  <div class="login-left">
+  <!-- Toggle button — visible on tablet/desktop only -->
+  <button class="login-panel-toggle" id="login-panel-btn" onclick="toggleLoginPanel()" title="Toggle branding panel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div class="login-left" id="login-left">
     <div class="login-brand">
       <div class="brand-sure">sure</div>
       <div class="brand-diag">Diagnostics</div>
@@ -680,7 +689,13 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
             <h2 id="welcome-name">Welcome back!</h2>
             <p id="welcome-date">Loading your dashboard...</p>
           </div>
-          <div style="display:flex;gap:12px;align-items:center;position:relative;z-index:1">
+          <div style="display:flex;gap:10px;align-items:center;position:relative;z-index:1;flex-wrap:wrap">
+            <select class="filter-select" id="dash-year-filter" onchange="renderDashboard()" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:var(--white);font-size:12px;padding:7px 12px">
+              <option value="" style="color:var(--navy)">All Years</option>
+            </select>
+            <select class="filter-select" id="dash-month-filter" onchange="renderDashboard()" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:var(--white);font-size:12px;padding:7px 12px">
+              <option value="" style="color:var(--navy)">All Months</option>
+            </select>
             <select class="filter-select" id="dash-branch-filter" onchange="renderDashboard()" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:var(--white);font-size:12px;padding:7px 12px">
               <option value="" style="color:var(--navy)">All Branches</option>
               <option value="Ikeja" style="color:var(--navy)">Ikeja</option>
@@ -783,6 +798,9 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
                 <option value="OAUTH">OAUTH</option>
                 <option value="Ijofi">Ijofi</option>
               </select>
+              <select class="filter-select" id="filter-year" onchange="renderPatients()">
+                <option value="">All Years</option>
+              </select>
               <select class="filter-select" id="filter-month" onchange="renderPatients()">
                 <option value="">All Months</option>
               </select>
@@ -801,9 +819,25 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
 
       <!-- ANALYTICS PAGE -->
       <div id="page-analytics" class="page">
-        <div class="page-header">
-          <div class="page-title">Analytics</div>
-          <div class="page-sub">Your referral performance breakdown and trends</div>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div class="page-title">Analytics</div>
+            <div class="page-sub">Your referral performance breakdown and trends</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select class="filter-select" id="analytics-year" onchange="renderAnalytics()">
+              <option value="">All Years</option>
+            </select>
+            <select class="filter-select" id="analytics-month" onchange="renderAnalytics()">
+              <option value="">All Months</option>
+              <option value="01">January</option><option value="02">February</option>
+              <option value="03">March</option><option value="04">April</option>
+              <option value="05">May</option><option value="06">June</option>
+              <option value="07">July</option><option value="08">August</option>
+              <option value="09">September</option><option value="10">October</option>
+              <option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
         </div>
         <div class="analytics-grid">
           <div class="chart-card">
@@ -1047,10 +1081,40 @@ function initApp() {
   subscribeRealtime();
 }
 
+// ── LOGIN PANEL TOGGLE ──────────────────────────────────────
+function toggleLoginPanel() {
+  const panel = document.getElementById('login-left');
+  const btn   = document.getElementById('login-panel-btn');
+  panel.classList.toggle('hidden');
+  btn.classList.toggle('panel-hidden');
+}
+
 function renderDashboard() {
   const allPts = getMyPatients();
   const branchFilter = document.getElementById('dash-branch-filter')?.value || '';
-  const pts = branchFilter ? allPts.filter(p => p.branch === branchFilter) : allPts;
+  const yearFilter   = document.getElementById('dash-year-filter')?.value   || '';
+  const monthFilter  = document.getElementById('dash-month-filter')?.value  || '';
+
+  // Populate year dropdown from data
+  const years = [...new Set(allPts.map(p => new Date(p.date).getFullYear()))].sort().reverse();
+  const ySel = document.getElementById('dash-year-filter');
+  if (ySel) {
+    const curY = ySel.value;
+    ySel.innerHTML = '<option value="" style="color:var(--navy)">All Years</option>' +
+      years.map(y => `<option value="${y}" style="color:var(--navy)" ${y==curY?'selected':''}>${y}</option>`).join('');
+  }
+  // Populate month dropdown
+  const mSel = document.getElementById('dash-month-filter');
+  if (mSel) {
+    const curM = mSel.value;
+    mSel.innerHTML = '<option value="" style="color:var(--navy)">All Months</option>' +
+      MONTHS.map((m,i) => `<option value="${String(i+1).padStart(2,'0')}" style="color:var(--navy)" ${String(i+1).padStart(2,'0')===curM?'selected':''}>${m}</option>`).join('');
+  }
+
+  let pts = allPts;
+  if (branchFilter) pts = pts.filter(p => p.branch === branchFilter);
+  if (yearFilter)   pts = pts.filter(p => new Date(p.date).getFullYear() == yearFilter);
+  if (monthFilter)  pts = pts.filter(p => String(new Date(p.date).getMonth()+1).padStart(2,'0') === monthFilter);
 
   const total = pts.length;
   const revenue = pts.reduce((s,p) => s + p.amount, 0);
@@ -1140,23 +1204,34 @@ function setDashBranch(branch) {
 
 function renderPatients() {
   const pts = getMyPatients();
-  const search = document.getElementById('search-patients').value.toLowerCase();
+  const search  = document.getElementById('search-patients').value.toLowerCase();
   const statusF = document.getElementById('filter-status').value;
   const branchF = document.getElementById('filter-branch').value;
-  const monthF = document.getElementById('filter-month').value;
+  const yearF   = document.getElementById('filter-year').value;
+  const monthF  = document.getElementById('filter-month').value;
 
-  // Populate month filter
-  const months = [...new Set(pts.map(p => { const d = new Date(p.date); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }))].sort().reverse();
+  // Populate year dropdown
+  const years = [...new Set(pts.map(p => new Date(p.date).getFullYear()))].sort().reverse();
+  const ySel = document.getElementById('filter-year');
+  const curY = ySel.value;
+  ySel.innerHTML = '<option value="">All Years</option>' +
+    years.map(y => `<option value="${y}" ${y==curY?'selected':''}>${y}</option>`).join('');
+
+  // Populate month dropdown (shows months relevant to selected year)
+  const filteredForMonth = yearF ? pts.filter(p => new Date(p.date).getFullYear() == yearF) : pts;
+  const months = [...new Set(filteredForMonth.map(p => { const d = new Date(p.date); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }))].sort().reverse();
   const mSel = document.getElementById('filter-month');
   const curMonth = mSel.value;
-  mSel.innerHTML = '<option value="">All Months</option>' + months.map(m => { const [y, mo] = m.split('-'); return `<option value="${m}" ${m === curMonth ? 'selected' : ''}>${MONTHS[parseInt(mo)-1]} ${y}</option>`; }).join('');
+  mSel.innerHTML = '<option value="">All Months</option>' +
+    months.map(m => { const [y,mo]=m.split('-'); return `<option value="${m}" ${m===curMonth?'selected':''}>${MONTHS[parseInt(mo)-1]} ${y}</option>`; }).join('');
 
   let filtered = pts.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search) || (p.id||'').toLowerCase().includes(search);
-    const matchStatus = !statusF || p.status === statusF;
-    const matchBranch = !branchF || p.branch === branchF;
-    const matchMonth = !monthF || p.date.startsWith(monthF);
-    return matchSearch && matchStatus && matchBranch && matchMonth;
+    const d = new Date(p.date);
+    return (!search  || p.name.toLowerCase().includes(search) || (p.id||'').toLowerCase().includes(search))
+        && (!statusF || p.status === statusF)
+        && (!branchF || p.branch === branchF)
+        && (!yearF   || d.getFullYear() == yearF)
+        && (!monthF  || p.date.startsWith(monthF));
   });
   filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
 
@@ -1179,7 +1254,23 @@ function renderPatients() {
 }
 
 function renderAnalytics() {
-  const pts = getMyPatients();
+  const allPts = getMyPatients();
+  const yearF  = document.getElementById('analytics-year')?.value  || '';
+  const monthF = document.getElementById('analytics-month')?.value || '';
+
+  // Populate year dropdown
+  const years = [...new Set(allPts.map(p => new Date(p.date).getFullYear()))].sort().reverse();
+  const ySel = document.getElementById('analytics-year');
+  if (ySel) {
+    const curY = ySel.value;
+    ySel.innerHTML = '<option value="">All Years</option>' +
+      years.map(y => `<option value="${y}" ${y==curY?'selected':''}>${y}</option>`).join('');
+  }
+
+  // Apply filters
+  let pts = allPts;
+  if (yearF)  pts = pts.filter(p => new Date(p.date).getFullYear() == yearF);
+  if (monthF) pts = pts.filter(p => String(new Date(p.date).getMonth()+1).padStart(2,'0') === monthF);
 
   // Month-on-month table
   const monthMap = {};
