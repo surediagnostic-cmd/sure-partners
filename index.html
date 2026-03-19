@@ -950,17 +950,44 @@ function dbToPatient(r) {
 function calcRebate(patient, partner) {
   const p = partner || currentPartner;
   if (!p) return 0;
-  if (p.rebateType === 'flat') return p.rebateFlat || 0;
-  return patient.amount * (p.rebateRate || 0.05);
+  // VIP partners use their own negotiated rate
+  if (p.vip) {
+    if (p.rebateType === 'flat') return p.rebateFlat || 0;
+    return patient.amount * (p.rebateRate || 0.05);
+  }
+  // Everyone else: use global rules engine (tiered by case type & amount)
+  return calcRebateByRules(patient);
+}
+
+// Lightweight rules engine for portal (reads from _portalRules loaded at login)
+let _portalRules = null;
+function calcRebateByRules(patient) {
+  const rules = _portalRules;
+  if (!rules) return patient.amount * 0.05; // fallback 5% if rules not loaded
+  const caseType  = patient.caseType || 'Lab';
+  const amount    = patient.amount   || 0;
+  const typeRules = rules[caseType]  || rules['Lab'];
+  let rebate = 0;
+  if (typeRules?.ranges) {
+    for (const range of typeRules.ranges) {
+      const inRange = amount >= (range.min || 0) &&
+        (range.max === '' || range.max == null || amount <= Number(range.max));
+      if (inRange) {
+        const r = String(range.rebate || '').trim();
+        rebate = r.endsWith('%') ? amount * (parseFloat(r) / 100) : (parseFloat(r) || 0);
+        break;
+      }
+    }
+  }
+  return rebate + (rules.bonus?.flatAmount || 0);
 }
 function fmtRebateRule(p) {
   if (!p) return '—';
-  // If partner has custom flat rate
-  if (p.rebateType === 'flat') return fmt(p.rebateFlat || 0) + ' flat per referral';
-  // If partner has non-default custom rate
-  if (p.rebateRate && p.rebateRate !== 0.05) return ((p.rebateRate)*100).toFixed(1) + '% (partner rate)';
-  // Otherwise uses admin-defined rules engine (tiered by case type & amount)
-  return 'Tiered (by case type & amount)';
+  if (p.vip) {
+    if (p.rebateType === 'flat') return fmt(p.rebateFlat || 0) + ' flat per referral (VIP)';
+    return ((p.rebateRate||0.05)*100).toFixed(1) + '% per referral (VIP rate)';
+  }
+  return 'Tiered by case type & amount';
 }
 
 // Get the effective rebate description for a specific patient
@@ -1016,12 +1043,13 @@ async function doLogin() {
       rebateType:  p.rebate_type  || 'percentage',
       rebateRate:  Number(p.rebate_rate || 0.05),
       rebateFlat:  Number(p.rebate_flat || 0),
+      vip:         p.vip          || false,
       active:      p.active,
       joined:      p.joined       || '',
     };
 
-    // Load this partner's patients
-    await loadMyPatients();
+    // Load patients + rebate rules in parallel
+    await Promise.all([loadMyPatients(), loadPortalRules()]);
 
     sessionStorage.setItem('sd_partner', JSON.stringify(currentPartner));
     document.getElementById('login-screen').style.display = 'none';
@@ -1412,6 +1440,14 @@ function showToast(msg, type) {
   window._toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// ── PORTAL RULES ENGINE ─────────────────────────────────────
+async function loadPortalRules() {
+  try {
+    const { data } = await db.from('rebate_rules').select('rules').eq('id', 1).single();
+    if (data?.rules) _portalRules = data.rules;
+  } catch { /* use fallback in calcRebateByRules */ }
+}
+
 // ── BOOT ────────────────────────────────────────────────────
 // Restore session if partner was already logged in
 (async () => {
@@ -1433,9 +1469,10 @@ function showToast(msg, type) {
           rebateType: p.rebate_type||'percentage',
           rebateRate: Number(p.rebate_rate||0.05),
           rebateFlat: Number(p.rebate_flat||0),
+          vip: p.vip||false,
           active: p.active, joined: p.joined||'',
         };
-        await loadMyPatients();
+        await Promise.all([loadMyPatients(), loadPortalRules()]);
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app').classList.add('visible');
         initApp();
