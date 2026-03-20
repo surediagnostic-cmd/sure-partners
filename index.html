@@ -304,6 +304,10 @@ tr:hover td{background:var(--gray-50)}
 
 /* ── MOBILE ─────────────────────────────────────────── */
 @media(max-width:768px){
+  /* Login: hide branding panel, show form full width */
+  .login-panel{ display:none; }
+  .login-form-panel{ width:100%; padding:48px 28px; }
+  #login-screen{ flex-direction:column; }
   /* Show topbar */
   .topbar{display:flex}
   /* Sidebar off-screen by default */
