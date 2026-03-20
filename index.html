@@ -620,6 +620,20 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
   }
   /* Grid adjustments */
   .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  /* Better touch targets */
+  .nav-item { padding: 14px 16px !important; min-height: 48px; }
+  .btn { min-height: 44px; }
+  .filter-select, .form-input, .form-select { min-height: 44px; font-size: 16px !important; } /* 16px prevents iOS zoom */
+  /* Scrollable tables on mobile */
+  table { font-size: 12px; }
+  th, td { padding: 8px 10px !important; white-space: nowrap; }
+  .stat-value { font-size: 22px !important; }
+  .stat-card { padding: 16px !important; }
+  .chart-card { padding: 16px !important; }
+  /* Welcome banner stacked on mobile */
+  .welcome-banner { flex-direction: column !important; gap: 12px; }
+  /* Overflow scroll for tables */
+  .table-card > div { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .charts-grid { grid-template-columns: 1fr !important; }
   .welcome-banner { padding: 20px 18px; }
   .welcome-banner h2 { font-size: 18px; }
@@ -634,8 +648,9 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
   .modal { max-height: 90vh; overflow-y: auto; }
   .modal .form-row { grid-template-columns: 1fr !important; }
 }
+/* Mobile topbar hidden by default on desktop */
+.mobile-topbar { display: none; }
 @media (min-width: 769px) {
-  .mobile-topbar { display: none !important; }
   #sidebar-overlay { display: none !important; }
 }
 </style>
@@ -697,7 +712,7 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
 <div id="app">
   <div class="app-layout">
   <!-- Mobile top bar (hidden on desktop) -->
-  <div class="mobile-topbar" style="display:none">
+  <div class="mobile-topbar">
     <div class="mobile-topbar-brand">sure<span>Diagnostics</span></div>
     <button class="hamburger-btn" onclick="toggleMobileSidebar()" aria-label="Open menu">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -782,11 +797,7 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
           </div>
         </div>
 
-        <!-- Branch mini cards -->
-        <div id="dash-branch-cards" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px"></div>
-
         <div class="stats-grid">
-          <div class="stat-card blue">
             <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
             <div class="stat-label">Total Referrals</div>
             <div class="stat-value" id="stat-referrals">0</div>
@@ -837,6 +848,15 @@ tbody td strong { color: var(--gray-800); font-weight: 600; }
               <tbody id="recent-tbody"></tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Branch Referrals by Location — bottom of dashboard -->
+        <div class="table-card" style="margin-top:20px">
+          <div class="table-header">
+            <div class="table-title">Referrals by Location</div>
+            <div style="font-size:12px;color:var(--gray-400)">Click a branch to filter dashboard</div>
+          </div>
+          <div id="dash-branch-cards" style="overflow-x:auto"></div>
         </div>
       </div>
 
