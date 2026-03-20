@@ -278,6 +278,23 @@ tr:hover td{background:var(--gray-50)}
 .rebate-badge-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;color:var(--orange)}
 .rebate-badge-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 
+/* ── REBATE EXPANDABLE ROWS ── */
+.rb-month-row { cursor:pointer; user-select:none; }
+.rb-month-row:hover td { background:var(--gray-50); }
+.rb-chevron { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:5px; background:var(--gray-100); transition:transform 0.2s, background 0.2s; flex-shrink:0; }
+.rb-chevron svg { width:11px; height:11px; color:var(--gray-600); }
+.rb-month-row.open .rb-chevron { transform:rotate(90deg); background:var(--orange-pale); }
+.rb-month-row.open .rb-chevron svg { color:var(--orange); }
+.rb-detail-row { display:none; }
+.rb-detail-row.open { display:table-row; }
+.rb-detail-inner { padding:0 0 8px 0; }
+.rb-detail-table { width:100%; border-collapse:collapse; background:var(--gray-50); }
+.rb-detail-table th { padding:7px 14px; font-size:10px; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.6px; background:var(--gray-100); border-bottom:1px solid var(--gray-200); }
+.rb-detail-table td { padding:9px 14px; font-size:12px; border-bottom:1px solid var(--gray-200); }
+.rb-detail-table tr:last-child td { border-bottom:none; }
+.rb-no-rebate { color:var(--gray-400); font-style:italic; }
+.rb-zero { color:var(--red); font-weight:600; }
+
 /* Trend table */
 .trend-table{width:100%}
 .trend-table th,.trend-table td{padding:9px 12px;font-size:12px}
@@ -633,10 +650,11 @@ tr:hover td{background:var(--gray-50)}
           <div class="kpi-card c-gold"><div class="kpi-lbl">Outstanding</div><div class="kpi-val" id="rb-outstanding">₦0</div><div class="kpi-note">Pending payment</div></div>
         </div>
         <div class="tbl-card">
-          <div class="tbl-hdr"><div class="tbl-title">Monthly Rebate Breakdown</div></div>
+          <div class="tbl-hdr"><div class="tbl-title">Monthly Rebate Breakdown</div><div style="font-size:12px;color:var(--gray-400)">Click a month to see patient details</div></div>
           <div class="tbl-scroll">
             <table>
               <thead><tr>
+                <th style="width:32px"></th>
                 <th>Month</th><th>Cases</th><th>Revenue</th><th>Effective Rate</th><th>Rebate</th><th>Status</th>
               </tr></thead>
               <tbody id="tbl-rebates"></tbody>
@@ -683,11 +701,15 @@ function toast(msg, type='') {
 // ── REBATE ENGINE ────────────────────────────────────
 function calcRebate(patient) {
   if (!_partner) return 0;
+  // VIP partners always get rebate regardless of outstanding balance
   if (_partner.vip) {
     const bonus = _rules?.bonus?.flatAmount || 0;
     if (_partner.rebateType === 'flat') return (_partner.rebateFlat || 0) + bonus;
     return patient.amount * (_partner.rebateRate || 0.05) + bonus;
   }
+  // Non-VIP: no rebate if patient still has an outstanding balance
+  if ((patient.feeDue || 0) > 0) return 0;
+  // Fully paid — use the global rules engine
   return calcByRules(patient);
 }
 
@@ -1109,28 +1131,69 @@ function renderRebates() {
   f.forEach(p => {
     const d = new Date(p.date);
     const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-    if (!mom[k]) mom[k] = { lbl: MONTHS[d.getMonth()]+' '+d.getFullYear(), n:0, rev:0, reb:0, byType:{} };
-    mom[k].n++; mom[k].rev += p.amount; mom[k].reb += calcRebate(p);
+    if (!mom[k]) mom[k] = { lbl: MONTHS[d.getMonth()]+' '+d.getFullYear(), n:0, rev:0, reb:0, byType:{}, patients:[] };
+    const reb = calcRebate(p);
+    mom[k].n++; mom[k].rev += p.amount; mom[k].reb += reb;
+    mom[k].patients.push({...p, _reb: reb});
     const t = p.caseType||'Lab';
     if (!mom[k].byType[t]) mom[k].byType[t]={rev:0,reb:0};
     mom[k].byType[t].rev += p.amount;
-    mom[k].byType[t].reb += calcRebate(p);
+    mom[k].byType[t].reb += reb;
   });
+
+  const chev = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px"><polyline points="9 18 15 12 9 6"/></svg>`;
 
   document.getElementById('tbl-rebates').innerHTML = Object.keys(mom).sort().reverse().map(k=>{
     const m = mom[k];
+    const rowId = 'rb-'+k;
     const rateStr = Object.entries(m.byType).map(([type,d])=>
       `${type}: ${d.rev>0?((d.reb/d.rev)*100).toFixed(1)+'%':fmt(d.reb)}`
     ).join(' · ') || '—';
-    return `<tr>
-      <td><strong>${m.lbl}</strong></td>
-      <td>${m.n}</td>
-      <td>${fmt(m.rev)}</td>
-      <td style="font-size:11px;color:var(--gray-600)">${rateStr}</td>
-      <td style="color:var(--teal);font-weight:600">${fmt(m.reb)}</td>
-      <td><span class="badge completed">Accrued</span></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" class="tbl-empty">No rebate data</td></tr>';
+    const sorted = [...m.patients].sort((a,b)=>b._reb-a._reb);
+    const zeroCount = sorted.filter(p=>p._reb===0).length;
+    const detailRows = sorted.map(p=>{
+      const hasBalance = (p.feeDue||0)>0;
+      const isVip = _partner&&_partner.vip;
+      return `<tr>
+        <td style="padding-left:20px"><strong style="font-size:12px">${p.name}</strong>${p.age?` <span style="font-size:10px;color:var(--gray-400)">${p.age}</span>`:''}</td>
+        <td style="font-family:monospace;font-size:11px">${p.caseId}</td>
+        <td style="white-space:nowrap">${new Date(p.date).toLocaleDateString('en-NG')}</td>
+        <td>${p.caseType||'—'}</td>
+        <td>${fmt(p.amount)}</td>
+        <td style="color:${hasBalance?'var(--red)':'var(--gray-400)'}">${hasBalance?fmt(p.feeDue):'—'}</td>
+        <td>${p._reb>0?`<span style="color:var(--teal);font-weight:700">${fmt(p._reb)}</span>`:hasBalance&&!isVip?`<span style="color:var(--red);font-weight:600">&#8358;0 <small style="font-weight:400">(balance owing)</small></span>`:`<span style="color:var(--gray-400)">&#8358;0</span>`}</td>
+        <td><span class="badge ${p.status}">${cap(p.status)}</span></td>
+      </tr>`;
+    }).join('');
+    const zeroNote = zeroCount>0?`<tr><td colspan="8" style="padding:6px 14px 10px;font-size:11px;color:var(--gray-400);border-top:1px dashed var(--gray-200)">${zeroCount} case${zeroCount>1?'s':''} excluded — outstanding balance</td></tr>`:'';
+    return `
+      <tr class="rb-month-row" onclick="toggleRbRow('${rowId}')" id="row-${rowId}">
+        <td><span class="rb-chevron">${chev}</span></td>
+        <td><strong>${m.lbl}</strong></td>
+        <td>${m.n}</td>
+        <td>${fmt(m.rev)}</td>
+        <td style="font-size:11px;color:var(--gray-600)">${rateStr}</td>
+        <td style="color:var(--teal);font-weight:700">${fmt(m.reb)}</td>
+        <td><span class="badge completed">Accrued</span></td>
+      </tr>
+      <tr class="rb-detail-row" id="${rowId}">
+        <td colspan="7" style="padding:0;border-bottom:2px solid var(--orange-pale)">
+          <table class="rb-detail-table">
+            <thead><tr><th>Patient</th><th>Case ID</th><th>Date</th><th>Type</th><th>Fee Paid</th><th>Fee Due</th><th>Rebate</th><th>Status</th></tr></thead>
+            <tbody>${detailRows}${zeroNote}</tbody>
+          </table>
+        </td>
+      </tr>`;
+  }).join('') || '<tr><td colspan="7" class="tbl-empty">No rebate data</td></tr>';
+}
+
+function toggleRbRow(id) {
+  const detail = document.getElementById(id);
+  const month  = document.getElementById('row-'+id);
+  if (!detail || !month) return;
+  const isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open', !isOpen);
+  month.classList.toggle('open', !isOpen);
 }
 
 // ── REALTIME ─────────────────────────────────────────
